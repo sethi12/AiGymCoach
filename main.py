@@ -22,8 +22,24 @@ def main():
         page_icon="🏋️‍♀️",
         page_title="AI Real-time GYM Coach",
         initial_sidebar_state="expanded",
-        layout="centered"
+        layout="centered",
+        menu_items=None
     )
+    st.html("""
+<style>
+[data-testid="stBottom"] {
+    display: none !important;
+}
+
+[data-testid="stToolbar"] {
+    display: none !important;
+}
+
+[data-testid="stHeader"] {
+    display: none !important;
+}
+</style>
+""")
 
     load_css(os.path.join(os.getcwd(), "static", "style.css"))
     inject_local_font(os.path.join(os.getcwd(), "static", "AdobeClean.otf"), "AdobeClean")
