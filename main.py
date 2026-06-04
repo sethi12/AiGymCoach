@@ -15,8 +15,11 @@ from groq import Groq
 from services.coaching.llm import LLMCoach
 from services.coaching.tts import TextToSpeech
 from services.coaching.voice_pipeline import VoicePipeline, autoplay_audio
-
-  
+from services.pages.ask_coach_page import render_ask_coach_page
+from services.pages.diet_page import render_diet_page
+from services.pages.workout_plan_page import (
+    render_workout_plan_page
+)
 def main():
     st.set_page_config(
         page_icon="🏋️‍♀️",
@@ -65,7 +68,23 @@ def main():
         return 
 
     initial_session_defaults()
+    current_page = st.session_state.get(
+    "current_page",
+    "workout"
+         )
 
+    if current_page == "ask_coach":
+        render_ask_coach_page()
+        return      
+    
+    elif current_page == "diet":
+        render_diet_page()
+        return
+    
+    elif current_page == "workout_plan":
+        render_workout_plan_page()
+        return
+    
     if "voice_pipeline" not in st.session_state:
         try:
             api_key = os.environ.get("GROQ_API_KEY", "")
@@ -87,6 +106,10 @@ def main():
 
         if st.session_state.username:
             st.caption(f"👤 Login as {st.session_state.username}")
+            
+        if st.button("🤖 Ask Coach", use_container_width=True):
+             st.session_state.current_page = "ask_coach"
+             st.rerun()
 
         st.divider()
 

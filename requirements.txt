@@ -30,7 +30,6 @@ google-cloud-storage==3.10.1
 
 groq==1.2.0
 gTTS==2.5.3
-
 requests==2.34.2
 python-dotenv==1.2.2
 Pillow==12.2.0

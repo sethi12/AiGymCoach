@@ -37,6 +37,8 @@ def initial_session_defaults():
         "extension_status": "N/A",
         "back_arch_status": "N/A",
         "balance_status": "N/A",
+         # Navigation
+        "current_page": "workout",
     }
 
     for key, value in defaults.items():
