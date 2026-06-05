@@ -141,5 +141,5 @@ def render_ask_coach_page():
             unsafe_allow_html=True
         )
         if st.button("Launch Chat Room →", key="btn_chat", use_container_width=True):
-            st.session_state.current_page = "chat_coach"
+            st.session_state.current_page = "chat_with_coach"
             st.rerun()

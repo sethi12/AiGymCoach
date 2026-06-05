@@ -20,6 +20,9 @@ from services.pages.diet_page import render_diet_page
 from services.pages.workout_plan_page import (
     render_workout_plan_page
 )
+from services.pages.chat_with_coach_page import (
+    render_chat_with_coach_page
+)
 def main():
     st.set_page_config(
         page_icon="🏋️‍♀️",
@@ -30,9 +33,7 @@ def main():
     )
     st.html("""
 <style>
-[data-testid="stBottom"] {
-    display: none !important;
-}
+
 
 [data-testid="stToolbar"] {
     display: none !important;
@@ -45,9 +46,7 @@ def main():
 """)
     st.html("""
 <style>
-[data-testid="stBottom"] {
-    display: none !important;
-}
+
 
 [data-testid="stToolbar"] {
     display: none !important;
@@ -85,6 +84,9 @@ def main():
         render_workout_plan_page()
         return
     
+    elif current_page == "chat_with_coach":
+        render_chat_with_coach_page()
+        return
     if "voice_pipeline" not in st.session_state:
         try:
             api_key = os.environ.get("GROQ_API_KEY", "")
