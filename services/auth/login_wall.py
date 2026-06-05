@@ -300,4 +300,3 @@ def render_login_wall():
 #         st.markdown('</div>', unsafe_allow_html=True)
 
 #     return False
-

@@ -31,6 +31,20 @@ def main():
         layout="centered",
         menu_items=None
     )
+    st.markdown("""
+<style>
+/* Hide collapse button */
+[data-testid="collapsedControl"] {
+    display: none !important;
+}
+
+/* Keep sidebar visible */
+section[data-testid="stSidebar"] {
+    min-width: 21rem !important;
+    max-width: 21rem !important;
+}
+</style>
+""", unsafe_allow_html=True)
     st.html("""
 <style>
 
@@ -87,6 +101,7 @@ def main():
     elif current_page == "chat_with_coach":
         render_chat_with_coach_page()
         return
+    
     if "voice_pipeline" not in st.session_state:
         try:
             api_key = os.environ.get("GROQ_API_KEY", "")
