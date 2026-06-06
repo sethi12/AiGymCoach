@@ -63,8 +63,20 @@ def sync_metrics_update(context):
         started_at = st.session_state.get("set_cycle_started_at", now_ts)
         time_taken = now_ts - started_at
         user_id = st.session_state.get("user_id", 0)
-
-        add_exercise(user_id, exercise, newly_completed * reps_per_set, newly_completed, time_taken)
+        gym_id  = st.session_state.get("gym_id")
+        if gym_id and user_id:
+            try:
+                add_exercise(
+                    gym_id,
+                    user_id,
+                    exercise,
+                    newly_completed * reps_per_set,  # total reps in completed sets
+                    newly_completed,                  # number of sets
+                    time_taken,
+                )
+            except Exception as e:
+                # Never crash the rerun loop over a DB write failure
+                st.session_state["_db_error"] = str(e)
 
         if st.session_state.get("voice_pipeline"):
             result = st.session_state.voice_pipeline.process_event(

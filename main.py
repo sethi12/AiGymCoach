@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import time
 import pandas as pd
+from services.auth.gym_login import render_login_gym_wall
 from services.auth.login_wall import render_login_wall
 from services.state.session_defaults import initial_session_defaults
 from services.config.workout_config import EXERCISE_OPTIONS
@@ -77,9 +78,12 @@ section[data-testid="stSidebar"] {
 
     init_db()
 
-    if not render_login_wall():
+    if not render_login_gym_wall():
         return 
 
+    if not render_login_wall():
+        return
+    
     initial_session_defaults()
     current_page = st.session_state.get(
     "current_page",
@@ -295,7 +299,9 @@ section[data-testid="stSidebar"] {
     user_id = st.session_state.get("user_id", 0)
 
     if isinstance(user_id, str):
-        history_rows = get_users_exercises(user_id)
+        gym_id = st.session_state.get("gym_id")
+        history_rows = get_users_exercises(gym_id, user_id)
+        # history_rows = get_users_exercises(user_id)
 
         arr = [
             {
