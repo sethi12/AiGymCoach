@@ -13,7 +13,8 @@ export default function AddUser() {
   const [loading, setLoading] = useState(false);
   const [generatingId, setGeneratingId] = useState(false);
   const [copied, setCopied] = useState(false);
-
+const API_URL =
+  process.env.NEXT_PUBLIC_BASE_URL;
   const handleNameChange = (e) => {
     setName(e.target.value);
     if (generatedId) {
@@ -32,7 +33,7 @@ export default function AddUser() {
       const gym = JSON.parse(localStorage.getItem("gym"));
 
       const response = await fetch(
-        "http://localhost:8000/api/member/generate-userid",
+        `${API_URL}/api/member/generate-userid`,
         {
           method: "POST",
           headers: {
@@ -85,7 +86,7 @@ export default function AddUser() {
       const gym = JSON.parse(localStorage.getItem("gym"));
 
       const response = await fetch(
-        "http://localhost:8000/api/member/add-member",
+        `${API_URL}/api/member/add-member`,
         {
           method: "POST",
           headers: {

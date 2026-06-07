@@ -10,7 +10,8 @@ export default function MembersList() {
   const [loading, setLoading] = useState(true);
   const [deletingMember, setDeletingMember] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-
+  const API_URL =
+  process.env.NEXT_PUBLIC_BASE_URL;
   const fetchMembers = async () => {
     try {
       setLoading(true);
@@ -19,7 +20,7 @@ export default function MembersList() {
       const gym = JSON.parse(gymData);
 
       const response = await fetch(
-        `http://localhost:8000/api/member/members/${gym.docId}`
+        `${API_URL}/api/member/members/${gym.docId}`
       );
       const data = await response.json();
 
@@ -44,7 +45,7 @@ export default function MembersList() {
       const gym = JSON.parse(gymData);
 
       const response = await fetch(
-        `http://localhost:8000/api/member/member/${gym.docId}/${memberid}`,
+        `${API_URL}/api/member/member/${gym.docId}/${memberid}`,
         {
           method: "DELETE",
         }
@@ -181,3 +182,15 @@ export default function MembersList() {
     </div>
   );
 }
+
+
+//  const [bodyParts, setBodyParts] = useState({
+//     Chest: ["Upper Chest", "Middle Chest", "Lower Chest"],
+//     Back: ["Lats", "Upper Back", "Lower Back", "Traps"],
+//     Shoulders: ["Front Delts", "Side Delts", "Rear Delts"],
+//     Biceps: ["Long Head", "Short Head", "Brachialis"],
+//     Triceps: ["Long Head", "Lateral Head", "Medial Head"],
+//     Forearms: ["Flexors", "Extensors", "Brachioradialis"],
+//     Legs: ["Quadriceps", "Hamstrings", "Glutes", "Calves", "Adductors"],
+//     Abs: ["Upper Abs", "Lower Abs", "Obliques", "Serratus"],
+//   });

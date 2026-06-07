@@ -11,6 +11,8 @@ export default function RobotCoreLoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const API_URL =
+  process.env.NEXT_PUBLIC_BASE_URL;
   const handleLogin = async (e) => {
     e.preventDefault();
 
@@ -18,18 +20,18 @@ export default function RobotCoreLoginPage() {
       setLoading(true);
 
       const response = await fetch(
-        "http://localhost:8000/api/auth/login",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            gymname,
-            password,
-          }),
-        }
-      );
+  `${API_URL}/api/auth/login`,
+  {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      gymname,
+      password,
+    }),
+  }
+);
 
       const data = await response.json();
 

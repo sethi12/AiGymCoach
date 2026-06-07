@@ -1,7 +1,9 @@
 from datetime import datetime
 import streamlit as st
 from services.coaching.workout_generator import generate_workout_plan
-
+from services.persistance.workout_repository import (
+    save_workout_for_member
+)
 
 def render_workout_plan_page():
     # ---------------------------------------------------------
@@ -288,3 +290,48 @@ def render_workout_plan_page():
                 st.subheader("💡 Behavioral Coaching Recommendations")
                 for tip in plan["tips"]:
                     st.success(f"💪 {tip}")
+        st.divider()
+
+        st.subheader("☁️ Save Workout Plan To Member")
+
+        with st.expander(
+            "Save This Workout Plan",
+            expanded=True
+            ):
+
+            save_userid = st.text_input(
+                "User ID",
+                key="save_workout_userid"
+            )
+
+            save_password = st.text_input(
+                "Password",
+                type="password",
+                key="save_workout_password"
+                )
+
+        if st.button(
+            "💾 Save Workout Plan",
+            use_container_width=True
+        ):
+
+            if not save_userid:
+                st.error("Enter User ID")
+
+            elif not save_password:
+                st.error("Enter Password")
+
+            else:
+
+                success, message = save_workout_for_member(
+                gym_id=st.session_state["gym_id"],
+                userid=save_userid,
+                password=save_password,
+                workout_json=plan
+                )
+
+                if success:
+                    st.success(message)
+
+                else:
+                    st.error(message)

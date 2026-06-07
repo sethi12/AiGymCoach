@@ -1,87 +1,122 @@
 "use client";
 
-import { useState, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Dumbbell, ChevronRight, Upload, PlayCircle, Target, Activity, Cpu, Flame, Plus, Check, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
 import toast from "react-hot-toast";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Plus,
+  Dumbbell,
+  Upload,
+  FolderPlus,
+  ChevronRight,
+  Activity,
+  Cpu,
+  Target,
+  PlayCircle,
+  X,
+  Check,
+  Flame,
+  Zap,
+} from "lucide-react";
 
 export default function AddExercise() {
-  const [selectedPart, setSelectedPart] = useState("Chest");
-  const [selectedMuscle, setSelectedMuscle] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [bodyParts, setBodyParts] = useState([]);
+  const [muscleGroups, setMuscleGroups] = useState([]);
+  const [selectedBodyPart, setSelectedBodyPart] = useState(null);
+  const [selectedMuscleGroup, setSelectedMuscleGroup] = useState(null);
   const [exerciseName, setExerciseName] = useState("");
   const [videoFile, setVideoFile] = useState(null);
   const [videoPreview, setVideoPreview] = useState("");
   const [isDragging, setIsDragging] = useState(false);
-  
-  // Custom states for custom muscle group entry fields
-  const [isAddingCustom, setIsAddingCustom] = useState(false);
-  const [customMuscleName, setCustomMuscleName] = useState("");
 
-  // Custom states for adding custom structural body parts
-  const [isAddingCustomPart, setIsAddingCustomPart] = useState(false);
-  const [customPartName, setCustomPartName] = useState("");
+  const [newBodyPart, setNewBodyPart] = useState("");
+  const [newMuscleGroup, setNewMuscleGroup] = useState("");
+  const [isAddingPart, setIsAddingPart] = useState(false);
+  const [isAddingMuscle, setIsAddingMuscle] = useState(false);
 
   const fileInputRef = useRef(null);
+const API_URL =
+  process.env.NEXT_PUBLIC_BASE_URL;
+  useEffect(() => {
+    fetchBodyParts();
+  }, []);
 
-  // Core state matrix tracking structural layout keys
-  const [bodyParts, setBodyParts] = useState({
-    Chest: ["Upper Chest", "Middle Chest", "Lower Chest"],
-    Back: ["Lats", "Upper Back", "Lower Back", "Traps"],
-    Shoulders: ["Front Delts", "Side Delts", "Rear Delts"],
-    Biceps: ["Long Head", "Short Head", "Brachialis"],
-    Triceps: ["Long Head", "Lateral Head", "Medial Head"],
-    Forearms: ["Flexors", "Extensors", "Brachioradialis"],
-    Legs: ["Quadriceps", "Hamstrings", "Glutes", "Calves", "Adductors"],
-    Abs: ["Upper Abs", "Lower Abs", "Obliques", "Serratus"],
-  });
-
-  // --- Inject Custom Structural Body Part Node ---
-  const handleAddCustomPart = () => {
-    const trimmed = customPartName.trim();
-    if (!trimmed) return toast.error("Body part string parameter missing");
-
-    // Format string to standard uppercase label formatting
-    const formattedPart = trimmed.charAt(0).toUpperCase() + trimmed.slice(1);
-
-    if (bodyParts[formattedPart]) {
-      return toast.error("Structural track key already declared");
+  const fetchBodyParts = async () => {
+    try {
+      const gym = JSON.parse(localStorage.getItem("gym"));
+      if (!gym?.docId) return;
+      const res = await fetch(`${API_URL}/api/exercise/bodyparts/${gym.docId}`);
+      const data = await res.json();
+      if (data.success) setBodyParts(data.bodyParts);
+    } catch (error) {
+      console.error("Fetch bodyparts issue:", error);
     }
-
-    setBodyParts(prev => ({
-      ...prev,
-      [formattedPart]: [] // Initialize with a fresh clean tracking target array
-    }));
-
-    setSelectedPart(formattedPart);
-    setSelectedMuscle("");
-    setCustomPartName("");
-    setIsAddingCustomPart(false);
-    toast.success(`${formattedPart} Cluster Initialized`);
   };
 
-  // --- Inject Custom Muscle Node ---
-  const handleAddCustomMuscle = () => {
-    const trimmed = customMuscleName.trim();
-    if (!trimmed) return toast.error("Moniker value string empty");
-    
-    if (bodyParts[selectedPart].some(m => m.toLowerCase() === trimmed.toLowerCase())) {
-      return toast.error("Muscle footprint already present in this track");
+  const fetchMuscles = async (bodyPartId) => {
+    try {
+      const gym = JSON.parse(localStorage.getItem("gym"));
+      if (!gym?.docId) return;
+      const res = await fetch(`${API_URL}/api/exercise/musclegroups/${gym.docId}/${bodyPartId}`);
+      const data = await res.json();
+      if (data.success) setMuscleGroups(data.muscles);
+    } catch (error) {
+      console.error("Fetch muscles issue:", error);
     }
-
-    setBodyParts(prev => ({
-      ...prev,
-      [selectedPart]: [...prev[selectedPart], trimmed]
-    }));
-
-    setSelectedMuscle(trimmed);
-    setCustomMuscleName("");
-    setIsAddingCustom(false);
-    toast.success("New Matrix Muscle Target Bound");
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files?.[0];
-    if (file) processVideoFile(file);
+  const addBodyPart = async () => {
+    const trimmed = newBodyPart.trim();
+    if (!trimmed) return toast.error("Enter body part");
+    try {
+      const gym = JSON.parse(localStorage.getItem("gym"));
+      const res = await fetch(`${API_URL}/api/exercise/add-bodypart`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ gymDocId: gym.docId, name: trimmed }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Body Part Added");
+        setNewBodyPart("");
+        setIsAddingPart(false);
+        fetchBodyParts();
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const addMuscleGroup = async () => {
+    if (!selectedBodyPart) return toast.error("Select body part");
+    const trimmed = newMuscleGroup.trim();
+    if (!trimmed) return toast.error("Enter muscle group");
+    try {
+      const gym = JSON.parse(localStorage.getItem("gym"));
+      const res = await fetch(`${API_URL}/api/exercise/add-musclegroup`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          gymDocId: gym.docId,
+          bodyPartId: selectedBodyPart.bodypartid,
+          name: trimmed,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Muscle Added");
+        setNewMuscleGroup("");
+        setIsAddingMuscle(false);
+        fetchMuscles(selectedBodyPart.bodypartid);
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const processVideoFile = (file) => {
@@ -94,15 +129,8 @@ export default function AddExercise() {
     toast.success("Kinetic Stream Cached");
   };
 
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    setIsDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setIsDragging(false);
-  };
-
+  const handleDragOver = (e) => { e.preventDefault(); setIsDragging(true); };
+  const handleDragLeave = () => setIsDragging(false);
   const handleDrop = (e) => {
     e.preventDefault();
     setIsDragging(false);
@@ -110,284 +138,668 @@ export default function AddExercise() {
     if (file) processVideoFile(file);
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!exerciseName.trim()) return toast.error("Provide routine schematic moniker");
-    if (!videoFile) return toast.error("Initialize kinetic mapping video asset");
-    
-    toast.success("Routine Profile Bound & Saved!");
+  const saveExercise = async () => {
+    if (!selectedBodyPart) return toast.error("Select Body Part");
+    if (!selectedMuscleGroup) return toast.error("Select Muscle Group");
+    if (!exerciseName.trim()) return toast.error("Enter Exercise Name");
+    if (!videoFile) return toast.error("Upload Video");
+    try {
+      setLoading(true);
+      const gym = JSON.parse(localStorage.getItem("gym"));
+      const formData = new FormData();
+      formData.append("gymDocId", gym.docId);
+      formData.append("bodyPartId", selectedBodyPart.bodypartid);
+      formData.append("muscleGroupId", selectedMuscleGroup.musclegroupid);
+      formData.append("exerciseName", exerciseName.trim());
+      formData.append("video", videoFile);
+      const res = await fetch(`${API_URL}/api/exercise/add-exercise`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.success) {
+        toast.success("Exercise Added");
+        setExerciseName("");
+        setVideoFile(null);
+        setVideoPreview("");
+        if (fileInputRef.current) fileInputRef.current.value = "";
+      } else {
+        toast.error(data.message);
+      }
+    } catch (error) {
+      console.error(error);
+      toast.error("Upload Failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="w-full max-w-5xl bg-zinc-900/40 border border-zinc-800/80 rounded-2xl overflow-hidden backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex flex-col md:flex-row relative">
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,#ffffff01_1px,transparent_1px),linear-gradient(to_bottom,#ffffff01_1px,transparent_1px)] bg-[size:1.5rem_1.5rem] pointer-events-none" />
+    <div className="w-full max-w-7xl mx-auto my-6 rounded-2xl overflow-hidden relative"
+      style={{ background: "#080808", border: "1px solid #1c1c1c", boxShadow: "0 32px 80px rgba(0,0,0,0.8)" }}
+    >
+      {/* Diagonal crosshatch texture overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none z-0"
+        style={{
+          backgroundImage:
+            "repeating-linear-gradient(45deg,rgba(255,77,0,0.012) 0,rgba(255,77,0,0.012) 1px,transparent 0,transparent 50%),repeating-linear-gradient(-45deg,rgba(255,77,0,0.012) 0,rgba(255,77,0,0.012) 1px,transparent 0,transparent 50%)",
+          backgroundSize: "22px 22px",
+        }}
+      />
 
-      {/* =========================================================================
-          LEFT NAVIGATION PANEL: BIOMETRIC BODY TARGETS
-          ========================================================================= */}
-      <div className="w-full md:w-72 border-b md:border-b-0 md:border-r border-zinc-800/80 bg-zinc-950/40 relative z-10 flex flex-col shrink-0 h-auto md:h-[690px]">
-        <div className="p-5 border-b border-zinc-800/60 flex items-center gap-2">
-          <Activity className="w-4 h-4 text-cyan-400 animate-pulse" />
-          <h2 className="text-zinc-400 font-mono text-xs font-black uppercase tracking-widest">Kinetic Part Vector</h2>
+      {/* Top flame accent bar */}
+      <div
+        className="h-[3px] w-full relative z-10 flex-shrink-0"
+        style={{ background: "linear-gradient(90deg,#ff4d00 0%,#ff7730 45%,#f5c842 100%)" }}
+      />
+
+      {/* ── GLOBAL HEADER ── */}
+      <div
+        className="flex items-center justify-between px-6 py-4 relative z-10 flex-shrink-0"
+        style={{ background: "linear-gradient(180deg,#0e0e0e 0%,#080808 100%)", borderBottom: "1px solid #161616" }}
+      >
+        <div className="flex items-center gap-4">
+          {/* Logo badge */}
+          <div
+            className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-black text-lg flex-shrink-0"
+            style={{ background: "linear-gradient(135deg,#ff4d00,#ff7730)", boxShadow: "0 0 20px rgba(255,77,0,0.35)" }}
+          >
+            💪
+          </div>
+          <div>
+            <h1
+              className="text-white font-black uppercase tracking-[3px] text-xl leading-none"
+              style={{ fontFamily: "'Barlow Condensed', 'Bebas Neue', sans-serif" }}
+            >
+              Routine Schematic Engine
+            </h1>
+            <p className="text-[10px] font-bold uppercase tracking-[3px] mt-1" style={{ color: "#333" }}>
+              Compile routine parameters &amp; data assets
+            </p>
+          </div>
         </div>
 
-        {/* Dynamic Nav Core Stack Container */}
-        <div className="p-3 overflow-y-auto no-scrollbar flex-1 flex flex-col justify-between gap-4">
-          <div className="space-y-1.5">
-            {Object.keys(bodyParts).map((part) => {
-              const isActive = selectedPart === part;
+        {/* Status pill */}
+        <div
+          className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-full flex-shrink-0"
+          style={{ background: "#111", border: "1px solid #1f1f1f" }}
+        >
+          <span
+            className="w-2 h-2 rounded-full flex-shrink-0"
+            style={{
+              background: loading ? "#f5c842" : "#a8e63d",
+              boxShadow: loading ? "0 0 8px #f5c842" : "0 0 8px rgba(168,230,61,0.7)",
+              animation: "pulse 2s infinite",
+            }}
+          />
+          <span className="font-bold text-[11px] uppercase tracking-[2px]" style={{ color: "#444" }}>
+            {loading ? "Syncing" : "Ready"}
+          </span>
+        </div>
+      </div>
+
+      {/* ── THREE-COLUMN LAYOUT ── */}
+      <div className="flex flex-col lg:flex-row relative z-10" style={{ minHeight: "680px" }}>
+
+        {/* ═══════════════════════════════════════════
+            LEFT PANEL — BODY PARTS
+        ═══════════════════════════════════════════ */}
+        <div
+          className="w-full lg:w-[220px] flex flex-col flex-shrink-0"
+          style={{ borderRight: "1px solid #161616", borderBottom: "1px solid #161616" }}
+        >
+          {/* Panel header */}
+          <div
+            className="flex items-center gap-3 px-4 py-3 flex-shrink-0"
+            style={{ borderBottom: "1px solid #161616", background: "rgba(0,0,0,0.3)" }}
+          >
+            <div
+              className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+              style={{ background: "rgba(255,77,0,0.12)", border: "1px solid rgba(255,77,0,0.15)" }}
+            >
+              <Activity className="w-3.5 h-3.5" style={{ color: "#ff4d00" }} />
+            </div>
+            <span className="font-black text-[10px] uppercase tracking-[3px]" style={{ color: "#383838" }}>
+              Body Part
+            </span>
+          </div>
+
+          {/* Scrollable list */}
+          <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-1.5" style={{ scrollbarWidth: "none" }}>
+            {bodyParts.length === 0 && (
+              <p className="text-center text-[11px] font-bold uppercase tracking-widest py-10" style={{ color: "#252525" }}>
+                No parts yet
+              </p>
+            )}
+            {bodyParts.map((part) => {
+              const isActive = selectedBodyPart?.bodypartid === part.bodypartid;
               return (
                 <button
-                  key={part}
+                  key={part.bodypartid}
                   onClick={() => {
-                    setSelectedPart(part);
-                    setSelectedMuscle("");
-                    setIsAddingCustom(false);
+                    setSelectedBodyPart(part);
+                    setSelectedMuscleGroup(null);
+                    setIsAddingMuscle(false);
+                    fetchMuscles(part.bodypartid);
                   }}
-                  className={`w-full flex items-center justify-between p-3 rounded-xl font-medium text-sm tracking-wide transition-all duration-200 group ${
+                  className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm uppercase tracking-wide transition-all duration-200 text-left"
+                  style={
                     isActive
-                      ? "bg-gradient-to-r from-cyan-500/10 via-cyan-500/5 to-transparent border border-cyan-500/20 text-cyan-400 shadow-[0_0_15px_rgba(34,211,238,0.05)]"
-                      : "border border-transparent text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800/30"
-                  }`}
+                      ? {
+                          background: "linear-gradient(90deg,rgba(255,77,0,0.13) 0%,transparent 100%)",
+                          border: "1px solid rgba(255,77,0,0.22)",
+                          color: "#ff4d00",
+                        }
+                      : {
+                          background: "transparent",
+                          border: "1px solid transparent",
+                          color: "#3a3a3a",
+                        }
+                  }
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = "#888";
+                      e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.color = "#3a3a3a";
+                      e.currentTarget.style.background = "transparent";
+                    }
+                  }}
                 >
                   <div className="flex items-center gap-2.5">
-                    <span className={`w-1 h-1 rounded-full bg-cyan-400 transition-transform ${isActive ? "scale-100" : "scale-0 group-hover:scale-100"}`} />
-                    <span>{part}</span>
+                    <span
+                      className="w-1.5 h-1.5 rounded-full flex-shrink-0 transition-all duration-200"
+                      style={{
+                        background: isActive ? "#ff4d00" : "transparent",
+                        boxShadow: isActive ? "0 0 6px #ff4d00" : "none",
+                        border: isActive ? "none" : "1px solid #2a2a2a",
+                      }}
+                    />
+                    <span style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.5px" }}>
+                      {part.name}
+                    </span>
                   </div>
-                  <ChevronRight size={14} className={`transition-transform duration-200 ${isActive ? "text-cyan-400 translate-x-0.5" : "text-zinc-700 group-hover:text-zinc-400"}`} />
+                  <ChevronRight
+                    size={13}
+                    style={{ color: isActive ? "#ff4d00" : "#252525", flexShrink: 0 }}
+                  />
                 </button>
               );
             })}
           </div>
 
-          {/* INLINE BODY PART ADDITION ACTION BUTTON NODE */}
-          <div className="pt-2 border-t border-zinc-900/60">
+          {/* Add body part footer */}
+          <div className="p-3 flex-shrink-0" style={{ borderTop: "1px solid #161616" }}>
             <AnimatePresence mode="wait">
-              {!isAddingCustomPart ? (
+              {!isAddingPart ? (
                 <motion.button
-                  initial={{ opacity: 0, y: 5 }}
+                  key="add-btn"
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  onClick={() => setIsAddingCustomPart(true)}
-                  className="w-full flex items-center justify-center gap-2 p-3 rounded-xl border border-dashed border-zinc-800/80 hover:border-cyan-500/30 bg-zinc-950/20 hover:bg-cyan-500/5 text-zinc-500 hover:text-cyan-400 font-mono text-[10px] font-bold uppercase tracking-widest transition-all duration-200"
+                  exit={{ opacity: 0, y: 4 }}
+                  onClick={() => setIsAddingPart(true)}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[2px] transition-all duration-200"
+                  style={{ border: "1.5px dashed #222", background: "transparent", color: "#2e2e2e" }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(255,77,0,0.4)";
+                    e.currentTarget.style.color = "#ff4d00";
+                    e.currentTarget.style.background = "rgba(255,77,0,0.04)";
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = "#222";
+                    e.currentTarget.style.color = "#2e2e2e";
+                    e.currentTarget.style.background = "transparent";
+                  }}
                 >
                   <Plus className="w-3.5 h-3.5" />
                   <span>Add Body Part</span>
                 </motion.button>
               ) : (
                 <motion.div
-                  initial={{ opacity: 0, y: 5 }}
+                  key="add-input"
+                  initial={{ opacity: 0, y: 4 }}
                   animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: 5 }}
-                  className="p-2 rounded-xl border border-cyan-500/20 bg-zinc-950 flex items-center gap-1.5"
+                  exit={{ opacity: 0, y: 4 }}
+                  className="flex items-center gap-1.5 p-2 rounded-xl"
+                  style={{ background: "#0f0f0f", border: "1px solid rgba(255,77,0,0.2)" }}
                 >
                   <input
                     type="text"
                     autoFocus
-                    placeholder="e.g., Cardio"
-                    value={customPartName}
-                    onChange={(e) => setCustomPartName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddCustomPart()}
-                    className="w-full bg-zinc-900 border border-zinc-800/80 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-700 outline-none focus:border-cyan-500/40 font-medium"
+                    placeholder="e.g., Back"
+                    value={newBodyPart}
+                    onChange={(e) => setNewBodyPart(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && addBodyPart()}
+                    className="flex-1 min-w-0 text-xs font-medium text-white outline-none px-2.5 py-1.5 rounded-lg"
+                    style={{
+                      background: "#161616",
+                      border: "1px solid #222",
+                      color: "#fff",
+                      fontFamily: "inherit",
+                    }}
                   />
                   <button
-                    onClick={() => { setIsAddingCustomPart(false); setCustomPartName(""); }}
-                    className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800/80 text-zinc-500 hover:text-zinc-300 transition-colors shrink-0"
+                    onClick={() => { setIsAddingPart(false); setNewBodyPart(""); }}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-colors"
+                    style={{ background: "#161616", border: "1px solid #222", color: "#444" }}
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
                   <button
-                    onClick={handleAddCustomPart}
-                    className="p-1.5 rounded-md bg-cyan-500 text-zinc-950 hover:bg-cyan-400 transition-colors flex items-center justify-center shrink-0"
+                    onClick={addBodyPart}
+                    className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0 transition-all"
+                    style={{ background: "#ff4d00", color: "#fff" }}
                   >
-                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                    <Check className="w-3.5 h-3.5" strokeWidth={3} />
                   </button>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
         </div>
-      </div>
 
-      {/* =========================================================================
-          RIGHT MAIN PANEL: SCHEMATIC MATRIX FORM
-          ========================================================================= */}
-      <div className="flex-1 p-6 md:p-8 overflow-y-auto no-scrollbar h-auto md:h-[690px] relative z-10 flex flex-col justify-between">
-        <div>
-          {/* Header Track Indicator */}
-          <div className="flex items-center justify-between border-b border-zinc-800/60 pb-5 mb-6">
-            <div className="flex items-center gap-3.5">
-              <div className="p-2.5 bg-gradient-to-br from-zinc-800 to-zinc-950 rounded-xl border border-zinc-800 flex items-center justify-center text-cyan-400 font-bold uppercase tracking-tighter">
-                {selectedPart.substring(0, 2)}
+        {/* ═══════════════════════════════════════════
+            MIDDLE PANEL — MUSCLE GROUPS
+        ═══════════════════════════════════════════ */}
+        <div
+          className="w-full lg:w-[240px] flex flex-col flex-shrink-0"
+          style={{ borderRight: "1px solid #161616", borderBottom: "1px solid #161616" }}
+        >
+          {/* Panel header */}
+          <div
+            className="flex items-center justify-between px-4 py-3 flex-shrink-0"
+            style={{ borderBottom: "1px solid #161616", background: "rgba(0,0,0,0.3)" }}
+          >
+            <div className="flex items-center gap-3">
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                style={{ background: "rgba(0,212,255,0.08)", border: "1px solid rgba(0,212,255,0.12)" }}
+              >
+                <Target className="w-3.5 h-3.5" style={{ color: "#00d4ff" }} />
               </div>
-              <div>
-                <h2 className="text-xl font-black text-white uppercase tracking-tight">
-                  <span>{selectedPart} Engine</span>
-                </h2>
-                <p className="text-[10px] text-zinc-500 font-mono tracking-widest uppercase mt-0.5">Isolate secondary kinetic targets</p>
-              </div>
+              <span className="font-black text-[10px] uppercase tracking-[3px]" style={{ color: "#383838" }}>
+                Muscle Group
+              </span>
             </div>
-            
-            <div className="hidden sm:flex items-center gap-1.5 bg-zinc-950/60 border border-zinc-800/80 px-3 py-1.5 rounded-lg font-mono text-[10px] text-zinc-400 uppercase tracking-wider">
-              <Cpu className="w-3 h-3 text-emerald-400" /> Array: Ready
-            </div>
+            {selectedBodyPart && (
+              <span
+                className="text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded"
+                style={{ background: "#111", border: "1px solid #1f1f1f", color: "#ff4d00" }}
+              >
+                {selectedBodyPart.name}
+              </span>
+            )}
           </div>
 
-          {/* MUSCLE GROUPS GRID SELECTION ARRAY */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-            {bodyParts[selectedPart]?.map((muscle, index) => {
-              const isSelected = selectedMuscle === muscle;
-              return (
-                <button
-                  key={index}
-                  onClick={() => setSelectedMuscle(muscle)}
-                  className={`text-left p-3.5 rounded-xl border relative transition-all duration-300 overflow-hidden group ${
-                    isSelected
-                      ? "border-cyan-500 bg-gradient-to-b from-cyan-950/20 to-zinc-950 text-cyan-400"
-                      : "border-zinc-800/80 bg-zinc-950/40 text-zinc-400 hover:border-zinc-700/80"
-                  }`}
-                >
-                  <Target className={`w-4 h-4 mb-3 transition-transform ${isSelected ? "text-cyan-400 scale-110" : "text-zinc-600 group-hover:text-cyan-400"}`} />
-                  <p className={`font-bold tracking-wide text-xs sm:text-sm ${isSelected ? "text-white" : "text-zinc-400 transition-colors group-hover:text-zinc-200"}`}>
-                    {muscle}
-                  </p>
-                  {isSelected && <div className="absolute top-0 right-0 w-8 h-8 bg-cyan-500/5 blur-md rounded-full pointer-events-none" />}
-                </button>
-              );
-            })}
+          {/* Scrollable muscle list */}
+          <div className="flex-1 p-3 overflow-y-auto flex flex-col gap-1.5" style={{ scrollbarWidth: "none" }}>
+            {!selectedBodyPart ? (
+              <p className="text-center text-[11px] font-bold uppercase tracking-widest py-12 px-4 leading-relaxed" style={{ color: "#252525" }}>
+                Select a body part first
+              </p>
+            ) : muscleGroups.length === 0 ? (
+              <p className="text-center text-[11px] font-bold uppercase tracking-widest py-10" style={{ color: "#252525" }}>
+                No muscles yet
+              </p>
+            ) : (
+              muscleGroups.map((muscle) => {
+                const isSelected = selectedMuscleGroup?.musclegroupid === muscle.musclegroupid;
+                return (
+                  <button
+                    key={muscle.musclegroupid}
+                    onClick={() => setSelectedMuscleGroup(muscle)}
+                    className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-bold text-sm uppercase tracking-wide transition-all duration-200 text-left"
+                    style={
+                      isSelected
+                        ? {
+                            background: "linear-gradient(90deg,rgba(0,212,255,0.1) 0%,transparent 100%)",
+                            border: "1px solid rgba(0,212,255,0.18)",
+                            color: "#00d4ff",
+                          }
+                        : {
+                            background: "transparent",
+                            border: "1px solid transparent",
+                            color: "#3a3a3a",
+                          }
+                    }
+                    onMouseEnter={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.color = "#888";
+                        e.currentTarget.style.background = "rgba(255,255,255,0.03)";
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isSelected) {
+                        e.currentTarget.style.color = "#3a3a3a";
+                        e.currentTarget.style.background = "transparent";
+                      }
+                    }}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <span
+                        className="w-1.5 h-1.5 rounded-full flex-shrink-0"
+                        style={{
+                          background: isSelected ? "#00d4ff" : "transparent",
+                          boxShadow: isSelected ? "0 0 6px #00d4ff" : "none",
+                          border: isSelected ? "none" : "1px solid #2a2a2a",
+                        }}
+                      />
+                      <span style={{ fontFamily: "'Barlow Condensed', sans-serif", letterSpacing: "0.5px" }}>
+                        {muscle.name}
+                      </span>
+                    </div>
+                    <ChevronRight size={13} style={{ color: isSelected ? "#00d4ff" : "#252525", flexShrink: 0 }} />
+                  </button>
+                );
+              })
+            )}
+          </div>
 
-            {/* DYNAMIC ACTION ENTRY ELEMENT MATRIX */}
-            <AnimatePresence mode="wait">
-              {!isAddingCustom ? (
-                <motion.button
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  onClick={() => setIsAddingCustom(true)}
-                  className="flex flex-col items-center justify-center p-3.5 rounded-xl border border-dashed border-zinc-800 hover:border-emerald-500/40 bg-zinc-950/10 hover:bg-emerald-500/5 text-zinc-600 hover:text-emerald-400 transition-all duration-200 min-h-[98px]"
-                >
-                  <Plus className="w-5 h-5 mb-1.5" />
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-widest">Add Muscle Group</span>
-                </motion.button>
-              ) : (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.95 }}
-                  className="p-2.5 rounded-xl border border-emerald-500/30 bg-zinc-950/80 flex flex-col justify-between min-h-[98px]"
-                >
-                  <input
-                    type="text"
-                    autoFocus
-                    placeholder="e.g., Lower Lats"
-                    value={customMuscleName}
-                    onChange={(e) => setCustomMuscleName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && handleAddCustomMuscle()}
-                    className="w-full bg-zinc-900 border border-zinc-800 rounded-lg px-2.5 py-1.5 text-xs text-white placeholder-zinc-700 outline-none focus:border-emerald-500/50"
-                  />
-                  <div className="flex items-center gap-1.5 mt-2 justify-end">
+          {/* Add muscle footer */}
+          {selectedBodyPart && (
+            <div className="p-3 flex-shrink-0" style={{ borderTop: "1px solid #161616" }}>
+              <AnimatePresence mode="wait">
+                {!isAddingMuscle ? (
+                  <motion.button
+                    key="muscle-add-btn"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    onClick={() => setIsAddingMuscle(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-[2px] transition-all duration-200"
+                    style={{ border: "1.5px dashed #222", background: "transparent", color: "#2e2e2e" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)";
+                      e.currentTarget.style.color = "#00d4ff";
+                      e.currentTarget.style.background = "rgba(0,212,255,0.04)";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.borderColor = "#222";
+                      e.currentTarget.style.color = "#2e2e2e";
+                      e.currentTarget.style.background = "transparent";
+                    }}
+                  >
+                    <FolderPlus className="w-3.5 h-3.5" />
+                    <span>Add Muscle</span>
+                  </motion.button>
+                ) : (
+                  <motion.div
+                    key="muscle-add-input"
+                    initial={{ opacity: 0, y: 4 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 4 }}
+                    className="flex items-center gap-1.5 p-2 rounded-xl"
+                    style={{ background: "#0f0f0f", border: "1px solid rgba(0,212,255,0.15)" }}
+                  >
+                    <input
+                      type="text"
+                      autoFocus
+                      placeholder="e.g., Upper Lats"
+                      value={newMuscleGroup}
+                      onChange={(e) => setNewMuscleGroup(e.target.value)}
+                      onKeyDown={(e) => e.key === "Enter" && addMuscleGroup()}
+                      className="flex-1 min-w-0 text-xs font-medium text-white outline-none px-2.5 py-1.5 rounded-lg"
+                      style={{ background: "#161616", border: "1px solid #222", fontFamily: "inherit" }}
+                    />
                     <button
-                      onClick={() => { setIsAddingCustom(false); setCustomMuscleName(""); }}
-                      className="p-1.5 rounded-md bg-zinc-900 border border-zinc-800 text-zinc-500 hover:text-zinc-300 transition-colors"
+                      onClick={() => { setIsAddingMuscle(false); setNewMuscleGroup(""); }}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: "#161616", border: "1px solid #222", color: "#444" }}
                     >
                       <X className="w-3.5 h-3.5" />
                     </button>
                     <button
-                      onClick={handleAddCustomMuscle}
-                      className="p-1.5 rounded-md bg-emerald-500 text-zinc-950 hover:bg-emerald-400 transition-colors flex items-center justify-center"
+                      onClick={addMuscleGroup}
+                      className="w-7 h-7 rounded-lg flex items-center justify-center flex-shrink-0"
+                      style={{ background: "#00d4ff", color: "#000" }}
                     >
-                      <Check className="w-3.5 h-3.5 stroke-[3]" />
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
                     </button>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-
-          {/* EXERCISE SPECIFICATIONS TRACKING SUITE */}
-          <AnimatePresence mode="wait">
-            {selectedMuscle && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -12 }}
-                transition={{ duration: 0.2 }}
-                className="mt-6 border-t border-zinc-800/60 pt-6 space-y-5"
-              >
-                <div className="flex flex-wrap items-center gap-2 bg-zinc-950/40 p-2 border border-zinc-800/50 rounded-xl max-w-max font-mono text-[10px] uppercase tracking-wider">
-                  <div className="px-2 py-1 bg-zinc-900 border border-zinc-800 rounded-md text-zinc-400">Target Node</div>
-                  <span className="text-zinc-500">{selectedPart}</span>
-                  <ChevronRight size={10} className="text-zinc-700" />
-                  <span className="text-cyan-400 font-bold">{selectedMuscle}</span>
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-xs font-mono tracking-widest text-zinc-500 uppercase">Exercise Moniker / Title</label>
-                  <div className="relative group">
-                    <Dumbbell className="absolute left-3.5 top-[14px] h-4 w-4 text-zinc-600 group-focus-within:text-cyan-400 transition-colors" />
-                    <input
-                      type="text"
-                      value={exerciseName}
-                      onChange={(e) => setExerciseName(e.target.value)}
-                      placeholder="e.g., Hack Squat Drop Set"
-                      className="w-full pl-11 pr-4 py-3.5 bg-zinc-950/60 border border-zinc-800/80 rounded-xl text-white placeholder-zinc-700 focus:outline-none focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400/20 transition text-sm font-medium tracking-wide"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 pt-1">
-                  <div>
-                    <label className="block mb-2 text-xs font-mono tracking-widest text-zinc-500 uppercase">Kinetic Mapping Capture Video</label>
-                    <div
-                      onDragOver={handleDragOver}
-                      onDragLeave={handleDragLeave}
-                      onDrop={handleDrop}
-                      onClick={() => fileInputRef.current?.click()}
-                      className={`border-2 border-dashed rounded-xl p-6 text-center cursor-pointer transition-all duration-300 flex flex-col justify-center items-center h-52 group relative ${
-                        isDragging ? "border-cyan-500 bg-cyan-500/5 scale-[0.99]" : "border-zinc-800 bg-zinc-950/30 hover:border-zinc-700 hover:bg-zinc-950/60"
-                      }`}
-                    >
-                      <input type="file" ref={fileInputRef} onChange={handleFileChange} accept="video/*" className="hidden" />
-                      <Upload className={`w-8 h-8 text-zinc-600 mb-3 group-hover:text-cyan-400 transition-colors ${isDragging && "text-cyan-400 animate-bounce"}`} />
-                      <p className="text-zinc-200 text-xs font-bold uppercase tracking-wider">Drop Kinetic Payload</p>
-                      <p className="text-[10px] text-zinc-500 font-mono mt-1">MP4, MOV OR AVI (MAX 50MB)</p>
-                      <button type="button" className="mt-4 px-3.5 py-1.5 bg-zinc-900 group-hover:bg-cyan-500 text-zinc-400 group-hover:text-zinc-950 border border-zinc-800 group-hover:border-transparent rounded-lg font-mono text-[10px] uppercase font-bold tracking-wider transition-all">Select Stream File</button>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="block mb-2 text-xs font-mono tracking-widest text-zinc-500 uppercase">Telemetry Playback Monitor</label>
-                    <div className="h-52 rounded-xl bg-zinc-950/80 border border-zinc-800/80 overflow-hidden relative flex items-center justify-center group">
-                      {videoPreview ? (
-                        <video src={videoPreview} className="w-full h-full object-cover" controls muted playsInline />
-                      ) : (
-                        <div className="flex flex-col items-center gap-2 text-zinc-700 text-center font-mono p-4">
-                          <PlayCircle className="w-10 h-10 text-zinc-800 group-hover:text-zinc-700 transition-colors" />
-                          <span className="text-[10px] uppercase tracking-widest">Awaiting Video Input Feed...</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
+          )}
         </div>
 
-        {selectedMuscle && (
-          <div className="mt-8 pt-4 border-t border-zinc-800/40">
-            <motion.button
-              whileHover={{ scale: 1.01, boxShadow: "0 0 30px rgba(34,211,238,0.15)" }}
-              whileTap={{ scale: 0.99 }}
-              onClick={handleSubmit}
-              className="w-full flex items-center justify-center gap-2.5 bg-gradient-to-r from-cyan-500 via-teal-500 to-emerald-500 text-zinc-950 py-4 rounded-xl font-mono font-black uppercase tracking-widest text-sm transition-all duration-300"
+        {/* ═══════════════════════════════════════════
+            RIGHT PANEL — MAIN FORM
+        ═══════════════════════════════════════════ */}
+        <div className="flex-1 flex flex-col min-w-0">
+          {/* Right panel scrollable content */}
+          <div className="flex-1 overflow-y-auto p-6 md:p-8 flex flex-col gap-7" style={{ scrollbarWidth: "none" }}>
+
+            {/* Breadcrumb track */}
+            <div
+              className="flex flex-wrap items-center gap-2 px-4 py-3 rounded-xl"
+              style={{ background: "#0d0d0d", border: "1px solid #1a1a1a" }}
             >
-              <span>Deploy Routine To Core Cluster</span>
-              <Flame className="w-4 h-4 fill-zinc-950" />
+              <span
+                className="px-2.5 py-1 rounded-lg font-black text-[9px] uppercase tracking-[2px]"
+                style={{ background: "#111", border: "1px solid #1f1f1f", color: "#2e2e2e" }}
+              >
+                Track
+              </span>
+              <span
+                className="font-black text-[11px] uppercase tracking-wider"
+                style={{ color: selectedBodyPart ? "#ff4d00" : "#282828" }}
+              >
+                {selectedBodyPart ? selectedBodyPart.name : "— Select Part"}
+              </span>
+              <ChevronRight size={11} style={{ color: "#222" }} />
+              <span
+                className="font-black text-[11px] uppercase tracking-wider"
+                style={{ color: selectedMuscleGroup ? "#00d4ff" : "#282828" }}
+              >
+                {selectedMuscleGroup ? selectedMuscleGroup.name : "— Select Muscle"}
+              </span>
+            </div>
+
+            {/* Exercise name input */}
+            <div>
+              <label
+                className="flex items-center gap-3 mb-3 font-black text-[10px] uppercase tracking-[3px]"
+                style={{ color: "#333" }}
+              >
+                Exercise Name
+                <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg,#1f1f1f,transparent)" }} />
+              </label>
+              <div className="relative group">
+                <Dumbbell
+                  className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 transition-colors duration-200"
+                  style={{ color: "#2a2a2a" }}
+                />
+                <input
+                  type="text"
+                  value={exerciseName}
+                  onChange={(e) => setExerciseName(e.target.value)}
+                  placeholder="e.g., Incline Dumbbell Press"
+                  className="w-full pl-12 pr-4 py-4 rounded-xl text-white font-semibold text-sm tracking-wide transition-all duration-200 outline-none"
+                  style={{
+                    background: "#0d0d0d",
+                    border: "1px solid #1a1a1a",
+                    color: "#fff",
+                    fontFamily: "inherit",
+                  }}
+                  onFocus={(e) => {
+                    e.currentTarget.style.borderColor = "rgba(0,212,255,0.3)";
+                    e.currentTarget.style.boxShadow = "0 0 0 3px rgba(0,212,255,0.05)";
+                    e.currentTarget.previousSibling.style.color = "#00d4ff";
+                  }}
+                  onBlur={(e) => {
+                    e.currentTarget.style.borderColor = "#1a1a1a";
+                    e.currentTarget.style.boxShadow = "none";
+                    e.currentTarget.previousSibling.style.color = "#2a2a2a";
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Video section */}
+            <div>
+              <label
+                className="flex items-center gap-3 mb-3 font-black text-[10px] uppercase tracking-[3px]"
+                style={{ color: "#333" }}
+              >
+                Kinetic Mapping Video
+                <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg,#1f1f1f,transparent)" }} />
+              </label>
+
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+                {/* Drop zone */}
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => fileInputRef.current?.click()}
+                  className="h-52 rounded-2xl flex flex-col items-center justify-center gap-3 cursor-pointer transition-all duration-300 relative overflow-hidden group"
+                  style={{
+                    background: isDragging ? "rgba(255,77,0,0.06)" : "#0d0d0d",
+                    border: isDragging ? "2px dashed #ff4d00" : "2px dashed #1f1f1f",
+                    transform: isDragging ? "scale(0.99)" : "scale(1)",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isDragging) {
+                      e.currentTarget.style.borderColor = "rgba(255,77,0,0.35)";
+                      e.currentTarget.style.background = "rgba(255,77,0,0.03)";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isDragging) {
+                      e.currentTarget.style.borderColor = "#1f1f1f";
+                      e.currentTarget.style.background = "#0d0d0d";
+                    }
+                  }}
+                >
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    accept="video/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) processVideoFile(file);
+                    }}
+                    className="hidden"
+                  />
+                  <div
+                    className="w-12 h-12 rounded-2xl flex items-center justify-center transition-transform duration-200 group-hover:-translate-y-1"
+                    style={{ background: "rgba(255,77,0,0.1)", border: "1px solid rgba(255,77,0,0.15)" }}
+                  >
+                    <Upload className="w-5 h-5" style={{ color: "#ff4d00" }} />
+                  </div>
+                  <div className="text-center">
+                    <p className="font-black text-sm uppercase tracking-wider" style={{ color: "#ccc" }}>
+                      Drop Kinetic Payload
+                    </p>
+                    <p className="font-bold text-[10px] uppercase tracking-[2px] mt-1" style={{ color: "#2e2e2e" }}>
+                      Video formats only
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="px-4 py-2 rounded-lg font-black text-[10px] uppercase tracking-[2px] transition-all duration-200 group-hover:text-white"
+                    style={{ background: "transparent", border: "1px solid #222", color: "#333" }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = "#ff4d00";
+                      e.currentTarget.style.borderColor = "#ff4d00";
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = "transparent";
+                      e.currentTarget.style.borderColor = "#222";
+                    }}
+                  >
+                    Select File
+                  </button>
+                </div>
+
+                {/* Video preview */}
+                <div
+                  className="h-52 rounded-2xl overflow-hidden flex items-center justify-center relative"
+                  style={{ background: "#0a0a0a", border: "1px solid #1a1a1a" }}
+                >
+                  {videoPreview ? (
+                    <video
+                      src={videoPreview}
+                      className="w-full h-full object-cover"
+                      controls
+                      muted
+                      playsInline
+                    />
+                  ) : (
+                    <div className="flex flex-col items-center gap-3" style={{ color: "#1f1f1f" }}>
+                      <PlayCircle className="w-12 h-12" style={{ color: "#1a1a1a" }} />
+                      <span className="font-black text-[10px] uppercase tracking-[2px]" style={{ color: "#242424" }}>
+                        Awaiting Video Feed
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ── SUBMIT BUTTON ── */}
+          <div
+            className="p-5 flex-shrink-0"
+            style={{ borderTop: "1px solid #161616", background: "rgba(0,0,0,0.4)" }}
+          >
+            <motion.button
+              whileHover={!loading ? { scale: 1.01, boxShadow: "0 8px 40px rgba(255,77,0,0.3)" } : {}}
+              whileTap={!loading ? { scale: 0.99 } : {}}
+              onClick={saveExercise}
+              disabled={loading}
+              className="w-full flex items-center justify-center gap-3 py-5 rounded-2xl font-black uppercase transition-all duration-300 relative overflow-hidden"
+              style={{
+                background: loading
+                  ? "#1a1a1a"
+                  : "linear-gradient(90deg, #ff4d00 0%, #ff7730 50%, #f5c842 100%)",
+                color: loading ? "#333" : "#fff",
+                letterSpacing: "4px",
+                fontSize: "16px",
+                fontFamily: "'Barlow Condensed', sans-serif",
+                cursor: loading ? "not-allowed" : "pointer",
+                border: loading ? "1px solid #222" : "none",
+              }}
+            >
+              {/* Shimmer overlay */}
+              {!loading && (
+                <span
+                  className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity duration-500"
+                  style={{
+                    background: "linear-gradient(90deg,transparent 0%,rgba(255,255,255,0.12) 50%,transparent 100%)",
+                    transform: "skewX(-20deg)",
+                  }}
+                />
+              )}
+              {loading ? (
+                <>
+                  <Cpu className="w-5 h-5 animate-spin" />
+                  <span>Streaming Payload Matrix...</span>
+                </>
+              ) : (
+                <>
+                  <span>Deploy Routine To Core Cluster</span>
+                  <Flame className="w-5 h-5 fill-white" />
+                </>
+              )}
             </motion.button>
           </div>
-        )}
+        </div>
       </div>
+
+      {/* Pulse animation keyframe via style tag */}
+      <style>{`
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.35; }
+        }
+        input::placeholder { color: #282828; }
+        ::-webkit-scrollbar { display: none; }
+      `}</style>
     </div>
   );
 }

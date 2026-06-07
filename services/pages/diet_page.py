@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta
 import streamlit as st
 from services.coaching.diet_generator import generate_diet
-
+from services.persistance.diet_repository import (
+            save_diet_for_member
+            )
 
 def render_diet_page():
     # ---------------------------------------------------------
@@ -368,3 +370,47 @@ def render_diet_page():
             st.subheader("💡 Behavioral Coach Recommendations")
             for tip in diet["tips"]:
                 st.success(f"⚡ {tip}")
+        st.divider()
+        st.subheader("☁️ Save Diet To Member")
+
+        with st.expander(
+        "Save This Diet",
+        expanded=True
+            ):
+
+            save_userid = st.text_input(
+            "User ID",
+            key="save_diet_userid"
+            )
+
+            save_password = st.text_input(
+            "Password",
+            type="password",
+            key="save_diet_password"
+            )
+
+            if st.button(
+            "💾 Save Diet",
+            use_container_width=True
+            ):
+
+                if not save_userid:
+                    st.error("Enter User ID")
+
+                elif not save_password:
+                    st.error("Enter Password")
+
+                else:
+
+                    success, message = save_diet_for_member(
+                    gym_id=st.session_state["gym_id"],
+                    userid=save_userid,
+                    password=save_password,
+                    diet_json=diet
+                    )
+
+                    if success:
+                        st.success(message)
+
+                    else:
+                        st.error(message)

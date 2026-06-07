@@ -1,7 +1,7 @@
 const express = require("express");
 
 const router = express.Router();
-
+const upload = require("../middleware/upload");
 const {
   addBodyPart,
   getBodyParts,
@@ -44,6 +44,7 @@ router.get(
 
 router.post(
   "/add-exercise",
+  upload.single("video"),
   addExercise
 );
 

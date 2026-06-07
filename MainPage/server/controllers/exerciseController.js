@@ -1,3 +1,4 @@
+const { db, bucket } = require("../config/firebase");
 const addBodyPart = async (req, res) => {
   try {
     const { gymDocId, name } = req.body;
@@ -182,17 +183,13 @@ const getMuscleGroups =
     }
   };
 
-  const addExercise = async (
-  req,
-  res
-) => {
+  const addExercise = async (req, res) => {
   try {
     const {
       gymDocId,
       bodyPartId,
       muscleGroupId,
       exerciseName,
-      videoUrl,
     } = req.body;
 
     if (
@@ -203,8 +200,14 @@ const getMuscleGroups =
     ) {
       return res.status(400).json({
         success: false,
-        message:
-          "Missing required fields",
+        message: "Missing required fields",
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Video file required",
       });
     }
 
@@ -218,19 +221,44 @@ const getMuscleGroups =
       .collection("exercises")
       .doc();
 
+    const fileName = `gyms/${gymDocId}/exercises/${exerciseRef.id}.mp4`;
+
+    const file = bucket.file(fileName);
+
+    await file.save(req.file.buffer, {
+      metadata: {
+        contentType: req.file.mimetype,
+      },
+    });
+
+    await file.makePublic();
+
+    const videoUrl = `https://storage.googleapis.com/${bucket.name}/${fileName}`;
+
     await exerciseRef.set({
       exerciseid: exerciseRef.id,
       exerciseName,
-      videoUrl: videoUrl || "",
+
+      bodyPartId,
+      muscleGroupId,
+
+      videoUrl,
+      videoPath: fileName,
+
       createdAt: new Date(),
     });
 
-    return res.json({
+    return res.status(200).json({
       success: true,
+      message: "Exercise Added Successfully",
       exerciseid: exerciseRef.id,
+      videoUrl,
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "ADD EXERCISE ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -238,6 +266,7 @@ const getMuscleGroups =
     });
   }
 };
+
 
 
 const getExercises = async (
@@ -294,7 +323,7 @@ const deleteExercise = async (
       exerciseId,
     } = req.params;
 
-    await db
+    const exerciseRef = db
       .collection("gyms")
       .doc(gymDocId)
       .collection("bodyparts")
@@ -302,16 +331,40 @@ const deleteExercise = async (
       .collection("musclegroups")
       .doc(muscleGroupId)
       .collection("exercises")
-      .doc(exerciseId)
-      .delete();
+      .doc(exerciseId);
+
+    const exerciseDoc =
+      await exerciseRef.get();
+
+    if (!exerciseDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: "Exercise not found",
+      });
+    }
+
+    const exerciseData =
+      exerciseDoc.data();
+
+    if (exerciseData.videoPath) {
+      await bucket
+        .file(exerciseData.videoPath)
+        .delete()
+        .catch(() => {});
+    }
+
+    await exerciseRef.delete();
 
     return res.json({
       success: true,
       message:
-        "Exercise deleted",
+        "Exercise deleted successfully",
     });
   } catch (error) {
-    console.error(error);
+    console.error(
+      "DELETE EXERCISE ERROR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -319,14 +372,11 @@ const deleteExercise = async (
     });
   }
 };
-
 module.exports = {
   addBodyPart,
   getBodyParts,
-
   addMuscleGroup,
   getMuscleGroups,
-
   addExercise,
   getExercises,
   deleteExercise,

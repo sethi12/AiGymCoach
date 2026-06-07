@@ -7,6 +7,7 @@ import toast, { Toaster } from "react-hot-toast";
 import AddUser from "../components/AddUser";
 import MembersList from "../components/MembersList";
 import AddExercise from "../components/Addexercise";
+import AllExercise from "../components/AllExercise";
 
 export default function GymDashboardPage() {
   const [selectedMenu, setSelectedMenu] = useState("add-user");
@@ -83,7 +84,32 @@ export default function GymDashboardPage() {
             </div>
           </motion.div>
         );
-
+        case "All-Exercise":
+        return (
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-6"
+          >
+            <div className="flex items-center gap-3 border-b border-zinc-800/80 pb-4">
+              <div className="p-2 bg-emerald-500/10 text-emerald-400 rounded-xl border border-emerald-500/20">
+                <PlusCircle className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-black tracking-tight uppercase">Add Exercise Routine</h2>
+                <p className="text-xs text-zinc-500 font-mono mt-0.5">MAP NEW KINETIC SCHEMATIC TO AI COMPUTER VISION</p>
+              </div>
+            </div>
+            <AllExercise/>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-zinc-900/40 border border-zinc-800/60 p-6 rounded-2xl backdrop-blur-xl">
+              <p className="text-zinc-500 text-sm font-mono col-span-2 italic">
+                // Form routine compilation vector pipeline...
+              </p>
+            </div>
+          </motion.div>
+        );
       default:
         return null;
     }
@@ -150,11 +176,29 @@ export default function GymDashboardPage() {
                 : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40"
             }`}
           >
+
             <div className="flex items-center gap-3.5">
               <Dumbbell className={`w-5 h-5 ${selectedMenu === "add-exercise" ? "text-emerald-400 rotate-45" : "text-zinc-500 group-hover:text-zinc-400"}`} />
               <span>Add Vision Routine</span>
             </div>
             <ChevronRight className={`w-4 h-4 transition-transform duration-200 opacity-0 group-hover:opacity-100 ${selectedMenu === "add-exercise" ? "opacity-100 text-emerald-400 translate-x-0.5" : "text-zinc-600"}`} />
+          </button>
+
+
+                  <button
+            onClick={() => setSelectedMenu("All-Exercise")}
+            className={`w-full group flex items-center justify-between p-3.5 rounded-xl border transition-all duration-200 font-medium text-sm tracking-wide ${
+              selectedMenu === "All-Exercise"
+                ? "bg-gradient-to-r from-emerald-500/10 to-transparent border-emerald-500/30 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.05)]"
+                : "border-transparent text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/40"
+            }`}
+          >
+            
+            <div className="flex items-center gap-3.5">
+              <Dumbbell className={`w-5 h-5 ${selectedMenu === "All-Exercise" ? "text-emerald-400 rotate-45" : "text-zinc-500 group-hover:text-zinc-400"}`} />
+              <span>All Exercises</span>
+            </div>
+            <ChevronRight className={`w-4 h-4 transition-transform duration-200 opacity-0 group-hover:opacity-100 ${selectedMenu === "All-Exercise" ? "opacity-100 text-emerald-400 translate-x-0.5" : "text-zinc-600"}`} />
           </button>
         </div>
 
