@@ -14,11 +14,12 @@ def sync_metrics_update(context):
         return 
     
     exercise = st.session_state.get("exercise_type")
+    pattern = st.session_state.get("movement_pattern")
 
     if not exercise:
         return
     
-    processor.set_exercise(exercise)
+    processor.set_movement_pattern(pattern)
     latest_metrics = processor.get_latest_metrics()
 
     if not latest_metrics:
@@ -31,7 +32,8 @@ def sync_metrics_update(context):
         
     st.session_state.reps = reps
 
-    fields = METRICS_FIELDS.get(exercise)
+    # fields = METRICS_FIELDS.get(exercise)
+    fields = METRICS_FIELDS.get(pattern)
 
     if not fields:
         return 

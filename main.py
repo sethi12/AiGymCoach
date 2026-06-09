@@ -78,8 +78,7 @@ section[data-testid="stSidebar"] {
 
     init_db()
 
-    # if not render_login_gym_wall():
-    #     return 
+    
 
     if not render_login_wall():
         return
@@ -137,8 +136,11 @@ section[data-testid="stSidebar"] {
         st.subheader("Workout Plan")
 
         if not workout_started:
-            plan_exercise = st.selectbox("Exercise", options=EXERCISE_OPTIONS, key="plan_exercise")
-
+            # plan_exercise = st.selectbox("Exercise", options=EXERCISE_OPTIONS, key="plan_exercise")
+            plan_exercise = st.query_params.get("exercise")
+            movement_pattern = st.query_params.get("pattern")
+            st.write(plan_exercise)
+            st.write(movement_pattern)
             plan_sets = st.number_input("Sets", min_value=0, max_value=50, key="plan_sets", step=1)
 
             plan_reps = st.number_input("Reps per Set", min_value=0, max_value=50, key="plan_reps", step=1)
@@ -149,6 +151,7 @@ section[data-testid="stSidebar"] {
 
             if start_session_button:
                 st.session_state.exercise_type = plan_exercise
+                st.session_state.movement_pattern = movement_pattern
                 st.session_state.target_sets = int(plan_sets)
                 st.session_state.reps_per_set = int(plan_reps)
                 st.session_state.reps = 0
@@ -209,36 +212,58 @@ section[data-testid="stSidebar"] {
             st.metric("Sets Completed", f"{sets_completed} / {target_sets}")
 
             st.divider()
+            pattern = st.session_state.get("movement_pattern", "")
+            exercise = st.session_state.get("exercise_type", "Exercise")
 
-            if exercise == "Squats":
-                st.subheader("Squat Metrics")
-                st.metric("Knee Angle", f"{st.session_state.knee_angle}°")
-                st.metric("Back Angle", f"{st.session_state.back_angle}°")
-                st.metric("Depth Status", st.session_state.depth_status)
+            st.subheader(f"{exercise} Metrics")
 
-            elif exercise == "Push-ups":
-                st.subheader("Push-up Metrics")
-                st.metric("Elbow Angle", f"{st.session_state.elbow_angle}°")
-                st.metric("Body Alignment", st.session_state.body_alignment)
-                st.metric("Hip Position", st.session_state.hip_status)
+            if pattern == "Squat":
+                st.metric("Knee Angle", f"{st.session_state.get('knee_angle', 0)}°")
+                st.metric("Back Angle", f"{st.session_state.get('back_angle', 0)}°")
+                st.metric("Depth Status", st.session_state.get("depth_status", "N/A"))
 
-            elif exercise == "Biceps Curls (Dumbbell)":
-                st.subheader("Curl Metrics")
-                st.metric("Elbow Angle", f"{st.session_state.elbow_angle}°")
-                st.metric("Shoulder Stability", st.session_state.shoulder_status)
-                st.metric("Swing Detection", st.session_state.swing_status)
+            elif pattern == "Press Horizontal":
+                st.metric("Elbow Angle", f"{st.session_state.get('elbow_angle', 0)}°")
+                st.metric("Body Alignment", st.session_state.get("body_alignment", "N/A"))
+                st.metric("Press Status", st.session_state.get("press_status", "N/A"))
 
-            elif exercise == "Shoulder Press":
-                st.subheader("Shoulder Press Metrics")
-                st.metric("Elbow Angle", f"{st.session_state.elbow_angle}°")
-                st.metric("Arm Extension", st.session_state.extension_status)
-                st.metric("Back Arch", st.session_state.back_arch_status)
+            elif pattern == "Press Vertical":
+                st.metric("Elbow Angle", f"{st.session_state.get('elbow_angle', 0)}°")
+                st.metric("Arm Extension", st.session_state.get("extension_status", "N/A"))
+                st.metric("Back Arch", st.session_state.get("back_arch_status", "N/A"))
 
-            elif exercise == "Lunges":
-                st.subheader("Lunge Metrics")
-                st.metric("Front Knee Angle", f"{st.session_state.front_knee_angle}°")
-                st.metric("Torso Angle", f"{st.session_state.torso_angle}°")
-                st.metric("Balance Status", st.session_state.balance_status)
+            elif pattern == "Pull Horizontal":
+                st.metric("Elbow Angle", f"{st.session_state.get('elbow_angle', 0)}°")
+                st.metric("Pull Status", st.session_state.get("pull_status", "N/A"))
+                st.metric("Back Status", st.session_state.get("back_status", "N/A"))
+
+            elif pattern == "Pull Vertical":
+                st.metric("Elbow Angle", f"{st.session_state.get('elbow_angle', 0)}°")
+                st.metric("Pull Status", st.session_state.get("pull_status", "N/A"))
+                st.metric("Back Status", st.session_state.get("back_status", "N/A"))
+
+            elif pattern == "Curl":
+                st.metric("Elbow Angle", f"{st.session_state.get('elbow_angle', 0)}°")
+                st.metric("Shoulder Stability", st.session_state.get("shoulder_status", "N/A"))
+                st.metric("Swing Detection", st.session_state.get("swing_status", "N/A"))
+
+            elif pattern == "Tricep":
+                st.metric("Elbow Angle", f"{st.session_state.get('elbow_angle', 0)}°")
+                st.metric("Tricep Status", st.session_state.get("tricep_status", "N/A"))
+
+            elif pattern == "Hinge":
+                st.metric("Hip Angle", f"{st.session_state.get('hip_angle', 0)}°")
+                st.metric("Back Angle", f"{st.session_state.get('back_angle', 0)}°")
+                st.metric("Hinge Status", st.session_state.get("hinge_status", "N/A"))
+
+            elif pattern == "Core":
+                st.metric("Body Angle", f"{st.session_state.get('body_angle', 0)}°")
+                st.metric("Core Status", st.session_state.get("core_status", "N/A"))
+
+            elif pattern == "Lunge":
+                st.metric("Front Knee Angle", f"{st.session_state.get('front_knee_angle', 0)}°")
+                st.metric("Torso Angle", f"{st.session_state.get('torso_angle', 0)}°")
+                st.metric("Balance Status", st.session_state.get("balance_status", "N/A"))
 
     st.title("AI Real-time GYM Coach")
     st.markdown("#### Real-time pose detection with proactive AI voice coaching")

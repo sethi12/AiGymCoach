@@ -14,35 +14,87 @@ POSE_CONNECTIONS = [
 ]
 
 
+# METRICS_FIELDS = {
+#     "Squats": {
+#         "knee_angle": 0,
+#         "back_angle": 0,
+#         "depth_status": "N/A",
+#     },
+#     "Push-ups": {
+#         "elbow_angle": 0,
+#         "body_alignment": "N/A",
+#         "hip_status": "N/A",
+#     },
+#     "Biceps Curls (Dumbbell)": {
+#         "elbow_angle": 0,
+#         "shoulder_status": "N/A",
+#         "swing_status": "N/A",
+#     },
+#     "Shoulder Press": {
+#         "elbow_angle": 0,
+#         "extension_status": "N/A",
+#         "back_arch_status": "N/A",
+#     },
+#     "Lunges": {
+#         "front_knee_angle": 0,
+#         "torso_angle": 0,
+#         "balance_status": "N/A",
+#     },
+# }
+
 METRICS_FIELDS = {
-    "Squats": {
-        "knee_angle": 0,
-        "back_angle": 0,
-        "depth_status": "N/A",
-    },
-    "Push-ups": {
+    "Press Horizontal": {
         "elbow_angle": 0,
         "body_alignment": "N/A",
-        "hip_status": "N/A",
+        "press_status": "N/A",
     },
-    "Biceps Curls (Dumbbell)": {
-        "elbow_angle": 0,
-        "shoulder_status": "N/A",
-        "swing_status": "N/A",
-    },
-    "Shoulder Press": {
+
+    "Press Vertical": {
         "elbow_angle": 0,
         "extension_status": "N/A",
         "back_arch_status": "N/A",
     },
-    "Lunges": {
-        "front_knee_angle": 0,
-        "torso_angle": 0,
-        "balance_status": "N/A",
+
+    "Pull Horizontal": {
+        "elbow_angle": 0,
+        "pull_status": "N/A",
+        "back_status": "N/A",
+    },
+
+    "Pull Vertical": {
+        "elbow_angle": 0,
+        "pull_status": "N/A",
+        "back_status": "N/A",
+    },
+
+    "Curl": {
+        "elbow_angle": 0,
+        "shoulder_status": "N/A",
+        "swing_status": "N/A",
+    },
+
+    "Tricep": {
+        "elbow_angle": 0,
+        "tricep_status": "N/A",
+    },
+
+    "Squat": {
+        "knee_angle": 0,
+        "back_angle": 0,
+        "depth_status": "N/A",
+    },
+
+    "Hinge": {
+        "hip_angle": 0,
+        "back_angle": 0,
+        "hinge_status": "N/A",
+    },
+
+    "Core": {
+        "body_angle": 0,
+        "core_status": "N/A",
     },
 }
-
-
 PROMPT = (
     "You are Apna AI Coach, a professional AI gym trainer monitoring a user's workout via live camera.\n\n"
     "### Your Role\n"

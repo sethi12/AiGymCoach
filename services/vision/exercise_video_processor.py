@@ -481,19 +481,20 @@ import threading
 from streamlit_webrtc import VideoProcessorBase
 from mediapipe.tasks import python
 from mediapipe.tasks.python import vision
-from detectors.squat import SquatDetector
-from detectors.pushup import PushUpDetector
-from detectors.biceps_curl import BicepsCurlDetector
-from detectors.shoulder_press import ShoulderPressDetector
-from detectors.lunges import LungesDetector
 from services.config.workout_config import POSE_CONNECTIONS
-
+from detectors import (
+    PressHorizontalDetector, PressVerticalDetector,
+    PullHorizontalDetector,  PullVerticalDetector,
+    CurlDetector, TricepDetector, SquatDetector,
+    LungeDetector, HingeDetector, CoreDetector
+)
 
 class VideoProcessorClass(VideoProcessorBase):
     def __init__(self):
         self._lock = threading.Lock()
         self._latest_metrics    = None
         self._exercise_type     = "Squats"
+        self._movement_pattern = "Press Horizontal"
         self._frame_ts_ms       = 0
         self._missed_frames     = 0
 
@@ -511,12 +512,18 @@ class VideoProcessorClass(VideoProcessorBase):
         self._landmarker = vision.PoseLandmarker.create_from_options(options)
 
         self._detectors = {
-            "Squats":                  SquatDetector(),
-            "Push-ups":                PushUpDetector(),
-            "Biceps Curls (Dumbbell)": BicepsCurlDetector(),
-            "Shoulder Press":          ShoulderPressDetector(),
-            "Lunges":                  LungesDetector(),
-        }
+    "Press Horizontal": PressHorizontalDetector(),
+    "Press Vertical":   PressVerticalDetector(),
+    "Pull Horizontal":  PullHorizontalDetector(),
+    "Pull Vertical":    PullVerticalDetector(),
+    "Curl":             CurlDetector(),
+    "Tricep":           TricepDetector(),
+    "Squat":            SquatDetector(),
+    "Lunge":            LungeDetector(),
+    "Hinge":            HingeDetector(),
+    "Core":             CoreDetector(),
+}
+
 
     # ── Thread-safe accessors ─────────────────────────────────────────────
 
@@ -533,21 +540,43 @@ class VideoProcessorClass(VideoProcessorBase):
             if self._exercise_type != exercise_type:
                 self._exercise_type = exercise_type
                 # Reset detector when exercise CHANGES (not on pose loss)
-                det = self._detectors.get(exercise_type)
+                # det = self._detectors.get(exercise_type)
+                # if det and hasattr(det, "reset"):
+                #     det.reset()
+
+    def set_movement_pattern(self, pattern):
+        with self._lock:
+            if self._movement_pattern != pattern:
+                self._movement_pattern = pattern
+
+                det = self._detectors.get(pattern)
+
                 if det and hasattr(det, "reset"):
                     det.reset()
-
     def get_exercise(self) -> str:
         with self._lock:
             return self._exercise_type
+    
 
-    def reset_reps(self):
-        """Called only on explicit workout restart from main.py."""
+    def get_movement_pattern(self):
         with self._lock:
-            ex = self._exercise_type
-        det = self._detectors.get(ex)
+            return self._movement_pattern
+        
+    def reset_reps(self):
+        pattern = self._movement_pattern
+
+        det = self._detectors.get(pattern)
+
         if det and hasattr(det, "reset"):
             det.reset()
+
+    # def reset_reps(self):
+    #     """Called only on explicit workout restart from main.py."""
+    #     with self._lock:
+    #         ex = self._exercise_type
+    #     det = self._detectors.get(ex)
+    #     if det and hasattr(det, "reset"):
+    #         det.reset()
 
     # ── Drawing ───────────────────────────────────────────────────────────
 
@@ -588,14 +617,76 @@ class VideoProcessorClass(VideoProcessorBase):
                     (0, 200, 255), 2, cv2.LINE_AA)
 
     def _draw_overlays(self, img, metrics: dict, ex: str):
+        # table = {
+        #     "Squats":                  lambda m: f"DEPTH: {m.get('depth_status','—')}  KNEE: {m.get('knee_angle','—')}°",
+        #     "Push-ups":                lambda m: f"BODY: {m.get('body_alignment','—')}  HIP: {m.get('hip_status','—')}",
+        #     "Biceps Curls (Dumbbell)": lambda m: f"SWING: {m.get('swing_status','—')}",
+        #     "Shoulder Press":          lambda m: f"EXT: {m.get('extension_status','—')}  BACK: {m.get('back_arch_status','—')}",
+        #     "Lunges":                  lambda m: f"BALANCE: {m.get('balance_status','—')}",
+        # }
         table = {
-            "Squats":                  lambda m: f"DEPTH: {m.get('depth_status','—')}  KNEE: {m.get('knee_angle','—')}°",
-            "Push-ups":                lambda m: f"BODY: {m.get('body_alignment','—')}  HIP: {m.get('hip_status','—')}",
-            "Biceps Curls (Dumbbell)": lambda m: f"SWING: {m.get('swing_status','—')}",
-            "Shoulder Press":          lambda m: f"EXT: {m.get('extension_status','—')}  BACK: {m.get('back_arch_status','—')}",
-            "Lunges":                  lambda m: f"BALANCE: {m.get('balance_status','—')}",
-        }
-        fn = table.get(ex)
+            "Press Horizontal":
+                lambda m: (
+                    f"PRESS: {m.get('press_status', '—')} | "
+                    f"BODY: {m.get('body_alignment', '—')}"
+                ),
+
+            "Press Vertical":
+                lambda m: (
+                    f"EXT: {m.get('extension_status', '—')} | "
+                    f"BACK: {m.get('back_arch_status', '—')}"
+                ),
+
+            "Pull Horizontal":
+                lambda m: (
+                    f"PULL: {m.get('pull_status', '—')} | "
+                    f"BACK: {m.get('back_status', '—')}"
+                ),
+
+            "Pull Vertical":
+                lambda m: (
+                    f"PULL: {m.get('pull_status', '—')} | "
+                    f"LEAN: {m.get('back_status', '—')}"
+                ),
+
+            "Curl":
+                lambda m: (
+                    f"SWING: {m.get('swing_status', '—')} | "
+                    f"SHOULDER: {m.get('shoulder_status', '—')}"
+                ),
+
+            "Tricep":
+                lambda m: (
+                    f"TRICEP: {m.get('tricep_status', '—')}"
+                ),
+
+            "Squat":
+                lambda m: (
+                    f"DEPTH: {m.get('depth_status', '—')} | "
+                    f"KNEE: {m.get('knee_angle', '—')}°"
+                ),
+
+            "Lunge":
+                lambda m: (
+                    f"BALANCE: {m.get('balance_status', '—')} | "
+                    f"KNEE: {m.get('front_knee_angle', '—')}°"
+                ),
+
+            "Hinge":
+                lambda m: (
+                    f"HINGE: {m.get('hinge_status', '—')} | "
+                    f"HIP: {m.get('hip_angle', '—')}°"
+                ),
+
+            "Core":
+                lambda m: (
+                    f"CORE: {m.get('core_status', '—')} | "
+                    f"BODY: {m.get('body_angle', '—')}°"
+                ),
+            }
+        pattern = self.get_movement_pattern()
+        fn = table.get(pattern)
+        # fn = table.get(ex)
         if fn:
             self._overlay_text(img, fn(metrics))
 
@@ -629,8 +720,11 @@ class VideoProcessorClass(VideoProcessorBase):
 
                 self._draw_skeleton(bgr, landmarks)
 
-                ex_type  = self.get_exercise()
-                detector = self._detectors.get(ex_type)
+                # ex_type  = self.get_exercise()
+                # detector = self._detectors.get(ex_type)
+                pattern = self.get_movement_pattern()
+
+                detector = self._detectors.get(pattern)
 
                 if detector:
                     try:
@@ -639,7 +733,7 @@ class VideoProcessorClass(VideoProcessorBase):
                         metrics = {}
 
                     metrics["pose_detected"] = True
-                    self._draw_overlays(bgr, metrics, ex_type)
+                    self._draw_overlays(bgr, metrics, pattern)
                     self.set_latest_metrics(metrics)
 
             else:

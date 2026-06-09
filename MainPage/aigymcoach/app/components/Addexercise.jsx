@@ -34,6 +34,7 @@ export default function AddExercise() {
   const [newMuscleGroup, setNewMuscleGroup] = useState("");
   const [isAddingPart, setIsAddingPart] = useState(false);
   const [isAddingMuscle, setIsAddingMuscle] = useState(false);
+  const [movementPattern, setMovementPattern] = useState("");
 
   const fileInputRef = useRef(null);
 const API_URL =
@@ -151,6 +152,10 @@ const API_URL =
       formData.append("bodyPartId", selectedBodyPart.bodypartid);
       formData.append("muscleGroupId", selectedMuscleGroup.musclegroupid);
       formData.append("exerciseName", exerciseName.trim());
+      formData.append(
+  "movementPattern",
+  movementPattern
+);
       formData.append("video", videoFile);
       const res = await fetch(`${API_URL}/api/exercise/add-exercise`, {
         method: "POST",
@@ -638,7 +643,50 @@ const API_URL =
                 />
               </div>
             </div>
+                  <div>
+  <label
+    className="flex items-center gap-3 mb-3 font-black text-[10px] uppercase tracking-[3px]"
+    style={{ color: "#333" }}
+  >
+    Movement Pattern
+    <span
+      className="flex-1 h-px"
+      style={{
+        background:
+          "linear-gradient(90deg,#1f1f1f,transparent)",
+      }}
+    />
+  </label>
 
+  <select
+    value={movementPattern}
+    onChange={(e) =>
+      setMovementPattern(e.target.value)
+    }
+    className="w-full px-4 py-4 rounded-xl text-white font-semibold text-sm tracking-wide outline-none"
+    style={{
+      background: "#0d0d0d",
+      border: "1px solid #1a1a1a",
+      color: "#fff",
+    }}
+  >
+    <option value="">
+      Select Movement Pattern
+    </option>
+
+    <option value="Press Horizontal">Press Horizontal</option>
+    <option value="Press Vertical">Press Vertical</option>
+    <option value="Pull Horizontal">Pull Horizontal</option>
+    <option value="Pull Vertical">Pull Vertical</option>
+    <option value="Curl">Curl</option>
+    <option value="Tricep">Tricep</option>
+    <option value="Squat">Squat</option>
+    <option value="Lunge">Lunge</option>
+     <option value="Hinge">Hinge</option>
+      <option value="Core">Lunge</option>
+       
+  </select>
+</div>
             {/* Video section */}
             <div>
               <label
