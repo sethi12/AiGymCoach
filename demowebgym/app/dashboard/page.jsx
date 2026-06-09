@@ -258,7 +258,7 @@ export default function Page() {
               const gymData = JSON.parse(localStorage.getItem("gym"));
               const gymId = gymData?.gymid || "";
               window.location.href =
-                `http://localhost:8501/?gymid=${gymId}` +
+                `https://aigymcoach.streamlit.app/?gymid=${gymId}` +
                 `&exercise=${encodeURIComponent(exercise.exerciseName)}` +
                 `&pattern=${encodeURIComponent(exercise.movementPattern)}`;
             }}
