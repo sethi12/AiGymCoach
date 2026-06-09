@@ -17,10 +17,25 @@ def render_login_wall() -> bool:
         return True
 
     # Gym must be logged in first
-    gym_id = st.session_state.get("gym_id")
+    gym_id = st.query_params.get("gymid")
     if not gym_id:
         st.error("No gym session found. Please login as gym first.")
         return False
+    else:
+        st.session_state["gym_id"]   = gym_id
+        try:
+            docs = list(db.collection("gyms")
+                            .where("gymid", "==", gym_id)
+                              .limit(1)
+                              .stream()
+                              )
+            if not docs:
+                        st.error("Gym not found.")
+                        return False
+            gym_data = docs[0].to_dict()
+            st.session_state["gym_name"] = gym_data.get("gymname")
+        except Exception as e:
+                    st.error(f"Error: {e}")
 
     st.title("👤 Member Login")
     st.markdown(

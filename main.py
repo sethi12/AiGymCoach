@@ -78,8 +78,8 @@ section[data-testid="stSidebar"] {
 
     init_db()
 
-    if not render_login_gym_wall():
-        return 
+    # if not render_login_gym_wall():
+    #     return 
 
     if not render_login_wall():
         return
