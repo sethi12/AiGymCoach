@@ -4,9 +4,10 @@ const cors = require("cors");
 const authroutes = require("./routes/authRoutes");
 const memberRoutes = require("./routes/memberRoutes");
 const exerciseRoutes =require("./routes/exerciseRoutes");
-const dietRoutes = require("./routes/dietRoutes");
+const dietRoutes = require("./routes/dietroutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const notificationScheduler = require("./routes/notificationScheduler");
+const workoutRoutes = require("./routes/workoutRoutes");
 
 const app = express();
 
@@ -41,6 +42,7 @@ app.use(
 app.use("/api/diets", dietRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/notifications", notificationScheduler);
+app.use("/api/workouts", workoutRoutes);
 app.get("/", (req, res) => {
   res.send("Backend Running");
 });

@@ -1,3 +1,64 @@
+# from services.firebase.firebase_service import db
+# from firebase_admin import firestore
+
+
+# def save_diet_for_member(
+#     gym_id,
+#     userid,
+#     password,
+#     diet_json
+# ):
+
+#     gym_query = (
+#         db.collection("gyms")
+#         .where("gymid", "==", gym_id)
+#         .limit(1)
+#         .stream()
+#     )
+
+#     gym_docs = list(gym_query)
+
+#     if not gym_docs:
+#         return False, "Gym not found"
+
+#     gym_doc = gym_docs[0]
+
+#     member_query = (
+#         db.collection("gyms")
+#         .document(gym_doc.id)
+#         .collection("gymmembers")
+#         .where("userid", "==", userid)
+#         .limit(1)
+#         .stream()
+#     )
+
+#     member_docs = list(member_query)
+
+#     if not member_docs:
+#         return False, "User not found"
+
+#     member_doc = member_docs[0]
+
+#     member_data = member_doc.to_dict()
+
+#     if member_data.get("password") != password:
+#         return False, "Invalid password"
+
+#     member_ref = (
+#         db.collection("gyms")
+#         .document(gym_doc.id)
+#         .collection("gymmembers")
+#         .document(member_doc.id)
+#     )
+
+#     member_ref.collection("diets").add(
+#         {
+#             "diet": diet_json,
+#             "createdAt": firestore.SERVER_TIMESTAMP
+#         }
+#     )
+
+#     return True, "Diet saved successfully"
 from services.firebase.firebase_service import db
 from firebase_admin import firestore
 
@@ -9,6 +70,7 @@ def save_diet_for_member(
     diet_json
 ):
 
+    # Find gym
     gym_query = (
         db.collection("gyms")
         .where("gymid", "==", gym_id)
@@ -23,6 +85,7 @@ def save_diet_for_member(
 
     gym_doc = gym_docs[0]
 
+    # Find member
     member_query = (
         db.collection("gyms")
         .document(gym_doc.id)
@@ -51,11 +114,28 @@ def save_diet_for_member(
         .document(member_doc.id)
     )
 
-    member_ref.collection("diets").add(
-        {
-            "diet": diet_json,
-            "createdAt": firestore.SERVER_TIMESTAMP
-        }
-    )
+    diets_ref = member_ref.collection("diets")
 
-    return True, "Diet saved successfully"
+    # Check if a diet already exists
+    existing_diets = list(diets_ref.limit(1).stream())
+
+    if existing_diets:
+        # Replace the existing diet
+        existing_doc = existing_diets[0]
+        diets_ref.document(existing_doc.id).set(
+            {
+                "diet": diet_json,
+                "createdAt": firestore.SERVER_TIMESTAMP
+            }
+        )
+        return True, "Existing diet replaced successfully"
+
+    else:
+        # Create a new diet
+        diets_ref.add(
+            {
+                "diet": diet_json,
+                "createdAt": firestore.SERVER_TIMESTAMP
+            }
+        )
+        return True, "Diet saved successfully"
