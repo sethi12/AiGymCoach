@@ -11,6 +11,7 @@ import {
   Trash2,
   AlertTriangle,
   X,
+  Users,
 } from "lucide-react";
 import toast from "react-hot-toast";
 
@@ -24,8 +25,12 @@ export default function AllExercise() {
   const [loading, setLoading] = useState(false);
   const [deleteModal, setDeleteModal] = useState(null); // { exerciseId, exerciseName }
   const [deleting, setDeleting] = useState(false);
-const API_URL =
-  process.env.NEXT_PUBLIC_BASE_URL;
+  
+  // New state for gender filtering
+  const [genderFilter, setGenderFilter] = useState("All"); // "All" | "Male" | "Female"
+
+  const API_URL = process.env.NEXT_PUBLIC_BASE_URL;
+  
   useEffect(() => {
     const gym = JSON.parse(localStorage.getItem("gym"));
     if (gym?.docId) {
@@ -102,6 +107,13 @@ const API_URL =
       setDeleting(false);
     }
   };
+
+  // Filter exercises array locally based on selection
+  const filteredExercises = exercises.filter((exercise) => {
+    if (genderFilter === "All") return true;
+    // Fallback logic in case 'gender' property is missing or lowercase in backend data
+    return exercise.gender?.toLowerCase() === genderFilter.toLowerCase();
+  });
 
   return (
     <div
@@ -246,17 +258,46 @@ const API_URL =
           </div>
         )}
 
-        {/* EXERCISES GRID */}
+        {/* EXERCISES GRID CONTAINER */}
         {selectedMuscle && (
           <div>
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(245,200,66,0.1)", border: "1px solid rgba(245,200,66,0.15)" }}>
-                <Dumbbell className="w-4 h-4" style={{ color: "#f5c842" }} />
+            {/* Header and Gender Filter bar controls */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: "rgba(245,200,66,0.1)", border: "1px solid rgba(245,200,66,0.15)" }}>
+                  <Dumbbell className="w-4 h-4" style={{ color: "#f5c842" }} />
+                </div>
+                <span className="font-black uppercase" style={{ fontSize: "11px", letterSpacing: "4px", color: "#3a3a3a", fontFamily: "'Barlow Condensed',sans-serif" }}>
+                  Exercises
+                </span>
+                <span className="hidden sm:inline w-24 h-px" style={{ background: "linear-gradient(90deg,#1f1f1f,transparent)" }} />
               </div>
-              <span className="font-black uppercase" style={{ fontSize: "11px", letterSpacing: "4px", color: "#3a3a3a", fontFamily: "'Barlow Condensed',sans-serif" }}>
-                Exercises
-              </span>
-              <span className="flex-1 h-px" style={{ background: "linear-gradient(90deg,#1f1f1f,transparent)" }} />
+
+              {/* GENDER TOGGLE SELECTOR */}
+              <div className="flex items-center gap-1 p-1 rounded-xl bg-[#0a0a0a] border border-[#161616] self-start sm:self-auto">
+                <div className="px-2 text-zinc-600 flex items-center gap-1.5">
+                  <Users className="w-3 h-3" />
+                </div>
+                {["All", "Male", "Female"].map((gender) => {
+                  const isGenderActive = genderFilter === gender;
+                  return (
+                    <button
+                      key={gender}
+                      onClick={() => setGenderFilter(gender)}
+                      className="px-3 py-1.5 rounded-lg font-black uppercase text-[10px] tracking-wider transition-all duration-200"
+                      style={
+                        isGenderActive
+                          ? { background: "#1a1a1a", border: "1px solid #2a2a2a", color: "#ff4d00" }
+                          : { background: "transparent", border: "1px solid transparent", color: "#444" }
+                      }
+                      onMouseEnter={(e) => { if (!isGenderActive) e.currentTarget.style.color = "#aaa"; }}
+                      onMouseLeave={(e) => { if (!isGenderActive) e.currentTarget.style.color = "#444"; }}
+                    >
+                      {gender}
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* Loading skeleton */}
@@ -274,19 +315,21 @@ const API_URL =
                   </div>
                 ))}
               </div>
-            ) : exercises.length === 0 ? (
+            ) : filteredExercises.length === 0 ? (
               <div className="rounded-2xl p-12 flex flex-col items-center justify-center gap-4" style={{ background: "#0a0a0a", border: "1.5px dashed #1a1a1a" }}>
                 <div className="w-14 h-14 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,77,0,0.07)", border: "1px solid rgba(255,77,0,0.12)" }}>
                   <Dumbbell className="w-6 h-6" style={{ color: "#ff4d00", opacity: 0.5 }} />
                 </div>
                 <div className="text-center">
                   <p className="font-black uppercase" style={{ fontSize: "13px", letterSpacing: "3px", color: "#2a2a2a" }}>No Exercises Found</p>
-                  <p className="font-bold uppercase mt-1" style={{ fontSize: "10px", letterSpacing: "2px", color: "#1f1f1f" }}>Add exercises to this muscle group</p>
+                  <p className="font-bold uppercase mt-1" style={{ fontSize: "10px", letterSpacing: "2px", color: "#1f1f1f" }}>
+                    {genderFilter !== "All" ? `No ${genderFilter} category data present here` : "Add exercises to this muscle group"}
+                  </p>
                 </div>
               </div>
             ) : (
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-5">
-                {exercises.map((exercise) => (
+                {filteredExercises.map((exercise) => (
                   <div
                     key={exercise.exerciseid}
                     className="rounded-2xl overflow-hidden transition-all duration-300 group relative"
@@ -311,6 +354,20 @@ const API_URL =
                         style={{ background: "#000" }}
                       />
                       <div className="absolute inset-x-0 top-0 h-8 pointer-events-none" style={{ background: "linear-gradient(180deg,rgba(0,0,0,0.5) 0%,transparent 100%)" }} />
+
+                      {/* Gender Badge Tag on Video card */}
+                      {exercise.gender && (
+                        <div 
+                          className="absolute bottom-3 left-3 px-2 py-0.5 rounded font-mono text-[9px] font-black uppercase tracking-widest border"
+                          style={{
+                            background: "rgba(0,0,0,0.75)",
+                            borderColor: exercise.gender.toLowerCase() === "female" ? "rgba(244,114,182,0.3)" : "rgba(56,189,248,0.3)",
+                            color: exercise.gender.toLowerCase() === "female" ? "#f472b6" : "#38bdf8"
+                          }}
+                        >
+                          {exercise.gender}
+                        </div>
+                      )}
 
                       {/* Delete button — top-right on video */}
                       <button

@@ -15,6 +15,7 @@ from services.persistance.exercise_repository import get_users_exercises
 from groq import Groq
 from services.coaching.llm import LLMCoach
 from services.coaching.tts import TextToSpeech
+import streamlit.components.v1 as components
 from services.coaching.voice_pipeline import VoicePipeline, autoplay_audio
 from services.pages.ask_coach_page import render_ask_coach_page
 from services.pages.diet_page import render_diet_page
@@ -123,7 +124,11 @@ section[data-testid="stSidebar"] {
     
     with st.sidebar:
         st.title("🏋️‍♂️ Apna AI Coach")
-
+        st.link_button(
+        "⬅ Back to Dashboard",
+        "https://aigym-web-landing-gym.vercel.app/dashboard",
+        use_container_width=True,
+            )
         if st.session_state.username:
             st.caption(f"👤 Login as {st.session_state.username}")
             
