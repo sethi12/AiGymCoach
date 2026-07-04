@@ -124,25 +124,11 @@ section[data-testid="stSidebar"] {
     
     with st.sidebar:
         st.title("🏋️‍♂️ Apna AI Coach")
-        st.markdown(
-    """
-    <a href="https://aigym-web-landing-gym.vercel.app/dashboard" target="_self"
-       style="
-            display:block;
-            width:100%;
-            padding:0.6rem 1rem;
-            text-align:center;
-            text-decoration:none;
-            border:1px solid #4a4a4a;
-            border-radius:8px;
-            background-color:#262730;
-            color:white;
-            font-weight:600;">
-        ⬅ Back to Exercises
-    </a>
-    """,
-    unsafe_allow_html=True,
-        )
+        st.link_button(
+        "⬅ Back to Exercises",
+        "https://aigym-web-landing-gym.vercel.app/dashboard",
+        use_container_width=True,
+            )
         if st.session_state.username:
             st.caption(f"👤 Login as {st.session_state.username}")
             
